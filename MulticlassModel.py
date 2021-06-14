@@ -9,11 +9,12 @@ tf.config.experimental.set_memory_growth(gpus[0], True)
 
 image_size = (180, 180)
 batch_size = 16
+epochs = 20
 
 
 ## WARNING: Would classify each person seperately
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "training_data",
+    "training_data_conglom",
     label_mode="categorical",
     validation_split=0.3,
     subset="training",
@@ -22,7 +23,7 @@ train_ds = tf.keras.preprocessing.image_dataset_from_directory(
     batch_size=batch_size,
 )
 val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "training_data",
+    "training_data_conglom",
     label_mode="categorical",
     validation_split=0.3,
     subset="validation",
@@ -124,8 +125,6 @@ def make_model(input_shape, num_classes):
 
 model = make_model(input_shape=image_size + (3,), num_classes=3)
 #keras.utils.plot_model(model, show_shapes=True)
-
-epochs = 20
 
 callbacks = [
     keras.callbacks.ModelCheckpoint("models\\multiclass_conv\\save_at_{epoch}.h5"),

@@ -5,42 +5,40 @@ import cv2
 import sys
 from pathlib import Path
 import shutil
+from datetime import datetime
+
+# try:
+cascPath = "webcam.xml"
+name = sys.argv[1]
+set = sys.argv[2]
+side = "none"
+if set != "negative":
+    side = sys.argv[3]
+
+if (set != "droop" and set != "negative"):
+    print("Invalid set. Enter \"droop\" or \"negative\"")
+    raise Exception("Invalid set")
+
+if (side != "right" and side != "left" and set != "negative"):
+    print("Invalid side. Enter \"right\" or \"left\"")
+    raise Exception("Invalid set")
+
+if set == "negative":
+    dir_path = "test_data\\" + name + "_" +  set + "_" + datetime.now().strftime("%d-%m-%Y--%H-%M-%S") + "\\"
+    file_path = name + "_" + set
+else:
+    dir_path = "training_data\\" + name + "_" + side + "_" + "_" + datetime.now().strftime("%d-%m-%Y--%H-%M-%S") + "\\"
+    file_path = name + "_" + side + "_" + set
 
 try:
-    cascPath = "webcam.xml"
-    name = sys.argv[1]
-    set = sys.argv[2]
-    side = "none"
-    if set != "negative":
-        side = sys.argv[3]
-
-    if (set != "droop" and set != "negative"):
-        print("Invalid set. Enter \"droop\" or \"negative\"")
-        raise Exception("Invalid set")
-
-    if (side != "right" and side != "left" and set != "negative"):
-        print("Invalid side. Enter \"right\" or \"left\"")
-        raise Exception("Invalid set")
-
-    if set == "negative":
-        dir_path = "training_data\\" + name + "_" +  set + "\\"
-        file_path = name + "_" + set
-        binary_dir_path = "training_data_binary\\" + name + "_" + set + "\\"
-    else:
-        dir_path = "training_data\\" + name + "_" + side + "_" + set + "\\"
-        file_path = name + "_" + side + "_" + set
-        binary_dir_path = "training_data_binary\\" + name + "_" + set + "\\"
-
-    try:
-        shutil.rmtree(dir_path)
-    except:
-        pass
-    Path(dir_path).mkdir(parents=True, exist_ok=True)
-    Path(binary_dir_path).mkdir(parents=True, exist_ok=True)
-
+    shutil.rmtree(dir_path)
 except:
-    print("Usage:  DataCollection.py {name} {droop/negative} {left/right/}")
-    exit(-1)
+    pass
+Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+# except:
+#     print("Usage:  DataCollection.py {name} {droop/negative} {left/right/}")
+#     exit(-1)
 
 faceCascade = cv2.CascadeClassifier(cascPath)
 
@@ -85,7 +83,6 @@ for i in range(0, 100):
             RGB_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             face_img = Image.fromarray(RGB_frame[y:y+h, x:x+w])
             face_img.save(dir_path + file_path + "_" + str(i) + ".jpg")
-            face_img.save(binary_dir_path + file_path + "_" + str(i) + ".jpg")
 
     # RGB_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     # face_img = Image.fromarray(RGB_frame)
