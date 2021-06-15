@@ -2,50 +2,12 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import matplotlib.pyplot as plt
+import glob
+import numpy as np
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array, array_to_img
 
-
-gpus = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(gpus[0], True)
-
-image_size = (90, 90)
+image_size = (100, 100)
 batch_size = 16
-epochs = 20
-
-
-## WARNING: Would classify each person seperately
-train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "training_data_conglom",
-    labels="inferred",
-    label_mode="categorical",
-    validation_split=0.3,
-    subset="training",
-    seed=1337,
-    image_size=image_size,
-    batch_size=batch_size,
-)
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "training_data_conglom",
-    labels="inferred",
-    label_mode="categorical",
-    validation_split=0.3,
-    subset="validation",
-    seed=1337,
-    image_size=image_size,
-    batch_size=batch_size,
-)
-
-
-
-# Show sample images
-# plt.figure(figsize=(10, 10))
-# for images, labels in train_ds.take(1):
-#     for i in range(9):
-#         ax = plt.subplot(3, 3, i + 1)
-#         plt.imshow(images[i].numpy().astype("uint8"))
-#         plt.title(int(labels[i]))
-#         plt.axis("off")
-# plt.show()
-
 
 data_augmentation = keras.Sequential(
     [
@@ -53,25 +15,6 @@ data_augmentation = keras.Sequential(
         layers.experimental.preprocessing.RandomZoom(0.1),
     ]
 )
-
-# Show modified images
-# plt.figure(figsize=(10, 10))
-# for images, _ in train_ds.take(12):
-#     for i in range(9):
-#         augmented_images = data_augmentation(images)
-#         ax = plt.subplot(3, 3, i + 1)
-#         plt.imshow(augmented_images[0].numpy().astype("uint8"))
-#         plt.axis("off")
-# plt.show()
-
-augmented_train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
-
-train_ds = train_ds.prefetch(buffer_size=32)
-val_ds = val_ds.prefetch(buffer_size=32)
-
-def get_config(self):
-    cfg = super().get_config()
-    return cfg
 
 def make_model(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
@@ -126,21 +69,39 @@ def make_model(input_shape, num_classes):
 
 
 model = make_model(input_shape=image_size + (3,), num_classes=3)
-#keras.utils.plot_model(model, show_shapes=True)
 
-callbacks = [
-    keras.callbacks.ModelCheckpoint("models\\multiclass_conv\\save_at_{epoch}.h5"),
-]
+model.load_weights("models\\multiclass_conv\\save_at_18.h5")
+
+test_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    "test_data",
+    label_mode="categorical",
+    seed=1337,
+    image_size=image_size,
+    batch_size=batch_size,
+)
+
+
 model.compile(
     optimizer=keras.optimizers.Adam(1e-3),
     loss="categorical_crossentropy",
     metrics=["accuracy"],
 )
 
-tf.debugging.set_log_device_placement(True)
-with tf.device('/GPU:0'):
-    model.fit(
-        train_ds, epochs=epochs, callbacks=callbacks, validation_data=val_ds,
-    )
+result = model.predict(test_ds)
 
-model.save_weights("models\\multiclass_conv\\final_model.h5")
+len_result = len(result)
+
+avg_negative = 0
+avg_right_droop = 0
+avg_left_droop = 0
+
+for row in result:
+    avg_negative += row[1]
+    avg_right_droop += row[2]
+    avg_left_droop += row[0]
+
+avg_negative /= len_result
+avg_right_droop /= len_result
+avg_left_droop /= len_result
+
+print("Chance of stroke: " + str((1-avg_negative) * 100) + "%")

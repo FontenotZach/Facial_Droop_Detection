@@ -7,38 +7,37 @@ from pathlib import Path
 import shutil
 from datetime import datetime
 
-# try:
-cascPath = "webcam.xml"
-name = sys.argv[1]
-set = sys.argv[2]
-side = "none"
-if set != "negative":
-    side = sys.argv[3]
-
-if (set != "droop" and set != "negative"):
-    print("Invalid set. Enter \"droop\" or \"negative\"")
-    raise Exception("Invalid set")
-
-if (side != "right" and side != "left" and set != "negative"):
-    print("Invalid side. Enter \"right\" or \"left\"")
-    raise Exception("Invalid set")
-
-if set == "negative":
-    dir_path = "test_data\\" + name + "_" +  set + "_" + datetime.now().strftime("%d-%m-%Y--%H-%M-%S") + "\\"
-    file_path = name + "_" + set
-else:
-    dir_path = "training_data\\" + name + "_" + side + "_" + "_" + datetime.now().strftime("%d-%m-%Y--%H-%M-%S") + "\\"
-    file_path = name + "_" + side + "_" + set
-
 try:
-    shutil.rmtree(dir_path)
-except:
-    pass
-Path(dir_path).mkdir(parents=True, exist_ok=True)
+    cascPath = "webcam.xml"
+    name = sys.argv[1]
+    set = sys.argv[2]
+    side = "none"
+    if set != "negative":
+        side = sys.argv[3]
 
-# except:
-#     print("Usage:  DataCollection.py {name} {droop/negative} {left/right/}")
-#     exit(-1)
+    if (set != "droop" and set != "negative"):
+        print("Invalid set. Enter \"droop\" or \"negative\"")
+        raise Exception("Invalid set")
+
+    if (side != "right" and side != "left" and set != "negative"):
+        print("Invalid side. Enter \"right\" or \"left\"")
+        raise Exception("Invalid set")
+
+    if set == "negative":
+        dir_path = "test_data\\" + name + "_" +  set + "_" + datetime.now().strftime("%d-%m-%Y--%H-%M-%S") + "\\"
+        file_path = name + "_" + set
+    else:
+        dir_path = "test_data\\" + name + "_" + side + "_" + "_" + datetime.now().strftime("%d-%m-%Y--%H-%M-%S") + "\\"
+        file_path = name + "_" + side + "_" + set
+
+    try:
+        shutil.rmtree(dir_path)
+    except:
+        pass
+    Path(dir_path).mkdir(parents=True, exist_ok=True)
+except:
+    print("Usage:  DataCollection.py {name} {droop/negative} {left/right/}")
+    exit(-1)
 
 faceCascade = cv2.CascadeClassifier(cascPath)
 
