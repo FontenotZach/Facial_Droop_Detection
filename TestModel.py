@@ -70,38 +70,53 @@ def make_model(input_shape, num_classes):
 
 model = make_model(input_shape=image_size + (3,), num_classes=3)
 
-model.load_weights("models\\multiclass_conv\\save_at_18.h5")
+models = glob.glob(".\\models\\multiclass_conv\\*10.h5", recursive=True)
+# models = glob.glob(".\\models\\multiclass_conv\\*.h5", recursive=True)
+model_prediction = []
 
-test_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "test_data",
-    label_mode="categorical",
-    seed=1337,
-    image_size=image_size,
-    batch_size=batch_size,
-)
+for loaded_model in models:
+    model.load_weights(loaded_model)
+
+    test_ds = tf.keras.preprocessing.image_dataset_from_directory(
+        "test_data",
+        label_mode="categorical",
+        seed=1337,
+        image_size=image_size,
+        batch_size=batch_size,
+    )
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(1e-2),
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
+    )
+
+    result = model.predict(test_ds)
+
+    len_result = len(result)
+
+    avg_negative = 0
+    avg_right_droop = 0
+    avg_left_droop = 0
+
+    for row in result:
+        avg_negative += row[1]
+        avg_right_droop += row[2]
+        avg_left_droop += row[0]
 
 
-model.compile(
-    optimizer=keras.optimizers.Adam(1e-3),
-    loss="categorical_crossentropy",
-    metrics=["accuracy"],
-)
 
-result = model.predict(test_ds)
+    avg_negative /= len_result
+    avg_right_droop /= len_result
+    avg_left_droop /= len_result
 
-len_result = len(result)
+    stroke_risk = (1 - avg_negative) * 100
+    print(loaded_model)
+    print("negative: " + str(avg_negative))
+    print("left: " + str(avg_left_droop))
+    print("right: " + str(avg_right_droop))
 
-avg_negative = 0
-avg_right_droop = 0
-avg_left_droop = 0
 
-for row in result:
-    avg_negative += row[1]
-    avg_right_droop += row[2]
-    avg_left_droop += row[0]
+    model_prediction.append(stroke_risk)
 
-avg_negative /= len_result
-avg_right_droop /= len_result
-avg_left_droop /= len_result
-
-print("Chance of stroke: " + str((1-avg_negative) * 100) + "%")
+print(model_prediction)

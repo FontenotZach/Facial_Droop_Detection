@@ -11,15 +11,14 @@ image_size = (90, 90)
 batch_size = 16
 epochs = 20
 
-
 ## WARNING: Would classify each person seperately
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
     "training_data_conglom",
     labels="inferred",
     label_mode="categorical",
-    validation_split=0.3,
+    validation_split=0.2,
     subset="training",
-    seed=1337,
+    seed=4242,
     image_size=image_size,
     batch_size=batch_size,
 )
@@ -27,22 +26,21 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     "training_data_conglom",
     labels="inferred",
     label_mode="categorical",
-    validation_split=0.3,
+    validation_split=0.2,
     subset="validation",
-    seed=1337,
+    seed=4242,
     image_size=image_size,
     batch_size=batch_size,
 )
 
 
-
-# Show sample images
+# # Show sample images
 # plt.figure(figsize=(10, 10))
 # for images, labels in train_ds.take(1):
 #     for i in range(9):
 #         ax = plt.subplot(3, 3, i + 1)
 #         plt.imshow(images[i].numpy().astype("uint8"))
-#         plt.title(int(labels[i]))
+#         plt.title(int(labels[i][0]))
 #         plt.axis("off")
 # plt.show()
 
@@ -54,7 +52,7 @@ data_augmentation = keras.Sequential(
     ]
 )
 
-# Show modified images
+# # Show modified images
 # plt.figure(figsize=(10, 10))
 # for images, _ in train_ds.take(12):
 #     for i in range(9):
@@ -63,6 +61,7 @@ data_augmentation = keras.Sequential(
 #         plt.imshow(augmented_images[0].numpy().astype("uint8"))
 #         plt.axis("off")
 # plt.show()
+# exit(0)
 
 augmented_train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
 
@@ -80,11 +79,13 @@ def make_model(input_shape, num_classes):
 
     # Entry block
     x = layers.experimental.preprocessing.Rescaling(1.0 / 255)(x)
-    x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
+    x = layers.Conv2D(32, 3, strides=2, padding="same", trainable=False)(x)
+    # x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
 
-    x = layers.Conv2D(64, 3, padding="same")(x)
+    x = layers.Conv2D(64, 3, padding="same", trainable=False)(x)
+    # x = layers.Conv2D(64, 3, padding="same")(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
 

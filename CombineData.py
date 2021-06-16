@@ -6,9 +6,12 @@ save_dir_path = "training_data_conglom\\"
 b_save_dir_path = "training_data_binary\\"
 retr_dir_path = "training_data\\"
 
-right_droop_files = glob.glob(".\\training_data\\*right_droop*\\*.jpg", recursive=True)
-left_droop_files  = glob.glob(".\\training_data\\*left_droop*\\*.jpg", recursive=True)
-negative_files    = glob.glob(".\\training_data\\*negative*\\*.jpg", recursive=True)
+right_droop_files = glob.glob(".\\training_data_min\\*right_droop*\\*.jpg", recursive=True)
+left_droop_files  = glob.glob(".\\training_data_min\\*left_droop*\\*.jpg", recursive=True)
+negative_files    = glob.glob(".\\training_data_min\\*negative*\\*.jpg", recursive=True)
+# right_droop_files = glob.glob(".\\training_data\\*right_droop*\\*.jpg", recursive=True)
+# left_droop_files  = glob.glob(".\\training_data\\*left_droop*\\*.jpg", recursive=True)
+# negative_files    = glob.glob(".\\training_data\\*negative*\\*.jpg", recursive=True)
 
 try:
     shutil.rmtree(save_dir_path)
