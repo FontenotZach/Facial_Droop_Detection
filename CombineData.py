@@ -34,6 +34,6 @@ for source in left_droop_files:
     shutil.copy(source, save_dir_path + "left_droop\\")
     shutil.copy(source, b_save_dir_path + "droop\\")
 
-for source in right_droop_files:
+for source in negative_files:
     shutil.copy(source, save_dir_path + "negative\\")
     shutil.copy(source, b_save_dir_path + "negative\\")

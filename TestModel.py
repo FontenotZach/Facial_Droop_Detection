@@ -9,6 +9,10 @@ from tensorflow.python.keras.preprocessing.image import ImageDataGenerator, load
 image_size = (100, 100)
 batch_size = 16
 
+LEFT_DROOP_MSG = "\tFeatures of facial asymmetry indicating left facial paralysis."
+RIGHT_DROOP_MSG = "\tFeatures of facial asymmetry indicating right facial paralysis."
+NEGATIVE_MSG = "\tNo features of facial asymmetry detected."
+
 data_augmentation = keras.Sequential(
     [
         layers.experimental.preprocessing.RandomRotation(0.1),
@@ -70,7 +74,7 @@ def make_model(input_shape, num_classes):
 
 model = make_model(input_shape=image_size + (3,), num_classes=3)
 
-models = glob.glob(".\\models\\multiclass_conv\\*10.h5", recursive=True)
+models = glob.glob(".\\models\\multiclass_conv\\*15.h5", recursive=True)
 # models = glob.glob(".\\models\\multiclass_conv\\*.h5", recursive=True)
 model_prediction = []
 
@@ -111,12 +115,16 @@ for loaded_model in models:
     avg_left_droop /= len_result
 
     stroke_risk = (1 - avg_negative) * 100
-    print(loaded_model)
-    print("negative: " + str(avg_negative))
-    print("left: " + str(avg_left_droop))
-    print("right: " + str(avg_right_droop))
+    print("\n\n--- Images processed ---")
+    print("\nProbabilities:")
+    print("\tnegative probability: " + str(avg_negative))
+    print("\tleft droop probability: " + str(avg_left_droop))
+    print("\tright droop probability: " + str(avg_right_droop))
 
-
-    model_prediction.append(stroke_risk)
-
-print(model_prediction)
+    print("\nAI suggestion:")
+    if avg_negative > avg_left_droop and avg_negative > avg_right_droop:
+        print(NEGATIVE_MSG)
+    elif avg_right_droop > avg_negative and avg_right_droop > avg_left_droop:
+        print(RIGHT_DROOP_MSG)
+    elif True:
+        print(LEFT_DROOP_MSG)
