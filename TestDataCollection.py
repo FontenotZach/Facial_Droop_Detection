@@ -11,7 +11,7 @@ try:
     cascPath = "webcam.xml"
 
 
-    dir_path = "test_data\\" + datetime.now().strftime("%d-%m-%Y--%H-%M-%S") + "\\"
+    dir_path = "data\\capture_data\\" + datetime.now().strftime("%d-%m-%Y--%H-%M-%S") + "\\"
     file_path = "img"
 
     try:

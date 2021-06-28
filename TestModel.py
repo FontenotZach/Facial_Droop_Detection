@@ -6,7 +6,7 @@ import glob
 import numpy as np
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array, array_to_img
 
-image_size = (100, 100)
+image_size = (90, 90)
 batch_size = 16
 
 LEFT_DROOP_MSG = "\tFeatures of facial asymmetry indicating left facial paralysis."
@@ -27,11 +27,13 @@ def make_model(input_shape, num_classes):
 
     # Entry block
     x = layers.experimental.preprocessing.Rescaling(1.0 / 255)(x)
-    x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
+    x = layers.Conv2D(32, 3, strides=2, padding="same", trainable=True)(x)
+    # x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
 
-    x = layers.Conv2D(64, 3, padding="same")(x)
+    x = layers.Conv2D(64, 3, padding="same", trainable=True)(x)
+    # x = layers.Conv2D(64, 3, padding="same")(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
 
@@ -74,57 +76,235 @@ def make_model(input_shape, num_classes):
 
 model = make_model(input_shape=image_size + (3,), num_classes=3)
 
-models = glob.glob(".\\models\\multiclass_conv\\*15.h5", recursive=True)
-# models = glob.glob(".\\models\\multiclass_conv\\*.h5", recursive=True)
+
+retr_dir_path = ".\\data\\conglom_data\\test_data\\"
+
+right_droop_dirs = glob.glob(retr_dir_path + "right_droop\\*", recursive=True)
+left_droop_dirs  = glob.glob(retr_dir_path + "left_droop\\*", recursive=True)
+negative_dirs    = glob.glob(retr_dir_path + "*negative\\*", recursive=True)
+
+right_total = len(right_droop_dirs)
+left_total = len(left_droop_dirs)
+negative_total = len(negative_dirs)
+
+models = glob.glob(".\\models\\multiclass_conv\\*.h5", recursive=True)
+# models = glob.glob(".\\models\\saved_models\\second_iteration\\cleaning_3\\*.h5", recursive=True)
 model_prediction = []
 
+output = []
+
 for loaded_model in models:
-    model.load_weights(loaded_model)
 
-    test_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        "test_data",
-        label_mode="categorical",
-        seed=1337,
-        image_size=image_size,
-        batch_size=batch_size,
-    )
+    right_correct = 0
+    right_left = 0
+    right_negative = 0
+    left_correct = 0
+    left_right = 0
+    left_negative = 0
+    negative_correct = 0
+    negative_right = 0
+    negative_left = 0
 
-    model.compile(
-        optimizer=keras.optimizers.Adam(1e-2),
-        loss="categorical_crossentropy",
-        metrics=["accuracy"],
-    )
+    for dir in right_droop_dirs:
+        model.load_weights(loaded_model)
 
-    result = model.predict(test_ds)
+        test_ds = tf.keras.preprocessing.image_dataset_from_directory(
+            dir,
+            label_mode="categorical",
+            seed=1337,
+            image_size=image_size,
+            batch_size=batch_size,
+        )
 
-    len_result = len(result)
+        model.compile(
+            optimizer=keras.optimizers.Adam(1e-2),
+            loss="categorical_crossentropy",
+            metrics=["accuracy"],
+        )
 
-    avg_negative = 0
-    avg_right_droop = 0
-    avg_left_droop = 0
+        result = model.predict(test_ds)
 
-    for row in result:
-        avg_negative += row[1]
-        avg_right_droop += row[2]
-        avg_left_droop += row[0]
+        len_result = len(result)
+
+        avg_negative = 0
+        avg_right_droop = 0
+        avg_left_droop = 0
+
+        for row in result:
+            if row[1] > row[2] and row[1] > row[0]:
+                avg_negative += 1
+            elif row[2] > row[1] and row[2] > row[0]:
+                avg_right_droop += 1
+            elif True:
+                avg_left_droop += 1
 
 
 
-    avg_negative /= len_result
-    avg_right_droop /= len_result
-    avg_left_droop /= len_result
+        avg_negative /= len_result
+        avg_right_droop /= len_result
+        avg_left_droop /= len_result
 
-    stroke_risk = (1 - avg_negative) * 100
-    print("\n\n--- Images processed ---")
-    print("\nProbabilities:")
-    print("\tnegative probability: " + str(avg_negative))
-    print("\tleft droop probability: " + str(avg_left_droop))
-    print("\tright droop probability: " + str(avg_right_droop))
+        # print("\n\n--- Images processed ---")
+        # print("\nProbabilities:")
+        # print("\tnegative probability: " + str(avg_negative))
+        # print("\tleft droop probability: " + str(avg_left_droop))
+        # print("\tright droop probability: " + str(avg_right_droop))
+        #
+        # print("\nAI suggestion:")
+        if avg_negative > avg_left_droop and avg_negative > avg_right_droop:
+            # print(NEGATIVE_MSG)
+            right_negative += 1
+        elif avg_right_droop > avg_negative and avg_right_droop > avg_left_droop:
+            # print(RIGHT_DROOP_MSG)
+            right_correct += 1
+        elif True:
+            right_left +=1
+            # print(LEFT_DROOP_MSG)
 
-    print("\nAI suggestion:")
-    if avg_negative > avg_left_droop and avg_negative > avg_right_droop:
-        print(NEGATIVE_MSG)
-    elif avg_right_droop > avg_negative and avg_right_droop > avg_left_droop:
-        print(RIGHT_DROOP_MSG)
-    elif True:
-        print(LEFT_DROOP_MSG)
+    for dir in left_droop_dirs:
+        model.load_weights(loaded_model)
+
+        test_ds = tf.keras.preprocessing.image_dataset_from_directory(
+            dir,
+            label_mode="categorical",
+            seed=1337,
+            image_size=image_size,
+            batch_size=batch_size,
+        )
+
+        model.compile(
+            optimizer=keras.optimizers.Adam(1e-2),
+            loss="categorical_crossentropy",
+            metrics=["accuracy"],
+        )
+
+        result = model.predict(test_ds)
+
+        len_result = len(result)
+
+        avg_negative = 0
+        avg_right_droop = 0
+        avg_left_droop = 0
+
+        for row in result:
+            if row[1] > row[2] and row[1] > row[0]:
+                avg_negative += 1
+            elif row[2] > row[1] and row[2] > row[0]:
+                avg_right_droop += 1
+            elif True:
+                avg_left_droop += 1
+            # avg_negative += row[1]
+            # avg_right_droop += row[2]
+            # avg_left_droop += row[0]
+
+
+
+        # avg_negative /= len_result
+        # avg_right_droop /= len_result
+        # avg_left_droop /= len_result
+
+        stroke_risk = (1 - avg_negative) * 100
+        # print("\n\n--- Images processed ---")
+        # print("\nProbabilities:")
+        # print("\tnegative probability: " + str(avg_negative))
+        # print("\tleft droop probability: " + str(avg_left_droop))
+        # print("\tright droop probability: " + str(avg_right_droop))
+        #
+        # print("\nAI suggestion:")
+        if avg_negative > avg_left_droop and avg_negative > avg_right_droop:
+            # print(NEGATIVE_MSG)
+            left_negative += 1
+        elif avg_right_droop > avg_negative and avg_right_droop > avg_left_droop:
+            # print(RIGHT_DROOP_MSG)
+            left_right += 1
+        elif True:
+            # print(LEFT_DROOP_MSG)
+            left_correct += 1
+
+    for dir in negative_dirs:
+        model.load_weights(loaded_model)
+
+        test_ds = tf.keras.preprocessing.image_dataset_from_directory(
+            dir,
+            label_mode="categorical",
+            seed=1337,
+            image_size=image_size,
+            batch_size=batch_size,
+        )
+
+        model.compile(
+            optimizer=keras.optimizers.Adam(1e-2),
+            loss="categorical_crossentropy",
+            metrics=["accuracy"],
+        )
+
+        result = model.predict(test_ds)
+
+        len_result = len(result)
+
+        avg_negative = 0
+        avg_right_droop = 0
+        avg_left_droop = 0
+
+        for row in result:
+            if row[1] > row[2] and row[1] > row[0]:
+                avg_negative += 1
+            elif row[2] > row[1] and row[2] > row[0]:
+                avg_right_droop += 1
+            elif True:
+                avg_left_droop += 1
+
+
+
+        avg_negative /= len_result
+        avg_right_droop /= len_result
+        avg_left_droop /= len_result
+
+        stroke_risk = (1 - avg_negative) * 100
+        # print("\n\n--- Images processed ---")
+        # print("\nProbabilities:")
+        # print("\tnegative probability: " + str(avg_negative))
+        # print("\tleft droop probability: " + str(avg_left_droop))
+        # print("\tright droop probability: " + str(avg_right_droop))
+        #
+        # print("\nAI suggestion:")
+        if avg_negative > avg_left_droop and avg_negative > avg_right_droop:
+            # print(NEGATIVE_MSG)
+            negative_correct += 1
+        elif avg_right_droop > avg_negative and avg_right_droop > avg_left_droop:
+            # print(RIGHT_DROOP_MSG)
+            negative_right += 1
+        elif True:
+            negative_left += 1
+            # print(LEFT_DROOP_MSG)
+
+
+    right_percentage = "{:.00%}".format(right_correct/right_total)
+    left_percentage = "{:.00%}".format(left_correct/left_total)
+    negative_percentage = "{:.0%}".format(negative_correct/negative_total)
+
+    right_left_confusion = "{:.00%}".format(right_left/right_total)
+    right_negative_confusion = "{:.00%}".format(right_negative/right_total)
+    negative_right_confusion = "{:.00%}".format(negative_right/right_total)
+    negative_left_confusion = "{:.00%}".format(negative_left/right_total)
+    left_right_confusion = "{:.00%}".format(left_right/right_total)
+    left_negative_confusion = "{:.00%}".format(left_negative/right_total)
+
+    total_accuracy = "{:.00%}".format( ( (right_correct/right_total) + (left_correct/left_total) + (negative_correct/negative_total) ) / 3)
+
+    output.append("Model: " + loaded_model + "\tright: " + right_percentage +"\trl_con: " + right_left_confusion + "\trn_con: "  + right_negative_confusion
+    + "\tleft " + left_percentage + "\tlr_con: " + left_right_confusion + "\tln_con: " + left_negative_confusion
+    + "\tnegative: " + negative_percentage + "\tnr_con: " + negative_right_confusion + "\tnl_con: " + negative_left_confusion
+    + "\ttotal accuracy: " + total_accuracy)
+
+    # right_percentage = "{:.0%}".format(right_correct/right_total)
+    # left_percentage = "{:.0%}".format(left_correct/left_total)
+    # negative_percentage = "{:.0%}".format(negative_correct/negative_total)
+    #
+    # print("\n\n\n\t--- Test Accuracy Report ---\n")
+    # print("\t Right Accuracy: " + right_percentage)
+    # print("\t Left Accuracy: " + left_percentage)
+    # print("\t Negative Accuracy: " + negative_percentage)
+
+for thing in output:
+    print(thing)

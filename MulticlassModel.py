@@ -13,21 +13,17 @@ epochs = 20
 
 ## WARNING: Would classify each person seperately
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "training_data_conglom",
+    "data//conglom_data//training_data",
     labels="inferred",
     label_mode="categorical",
-    validation_split=0.2,
-    subset="training",
     seed=4242,
     image_size=image_size,
     batch_size=batch_size,
 )
 val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "training_data_conglom",
+    "data//conglom_data//validation_data",
     labels="inferred",
     label_mode="categorical",
-    validation_split=0.2,
-    subset="validation",
     seed=4242,
     image_size=image_size,
     batch_size=batch_size,
@@ -65,6 +61,7 @@ data_augmentation = keras.Sequential(
 
 augmented_train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
 
+augmented_train_ds = augmented_train_ds.prefetch(buffer_size=32)
 train_ds = train_ds.prefetch(buffer_size=32)
 val_ds = val_ds.prefetch(buffer_size=32)
 
@@ -79,12 +76,12 @@ def make_model(input_shape, num_classes):
 
     # Entry block
     x = layers.experimental.preprocessing.Rescaling(1.0 / 255)(x)
-    x = layers.Conv2D(32, 3, strides=2, padding="same", trainable=False)(x)
+    x = layers.Conv2D(32, 3, strides=2, padding="same", trainable=True)(x)
     # x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
 
-    x = layers.Conv2D(64, 3, padding="same", trainable=False)(x)
+    x = layers.Conv2D(64, 3, padding="same", trainable=True)(x)
     # x = layers.Conv2D(64, 3, padding="same")(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
@@ -144,4 +141,4 @@ with tf.device('/GPU:0'):
         train_ds, epochs=epochs, callbacks=callbacks, validation_data=val_ds,
     )
 
-model.save_weights("models\\multiclass_conv\\final_model.h5")
+#model.save_weights("models\\multiclass_conv\\final_model.h5")
